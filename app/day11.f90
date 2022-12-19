@@ -14,7 +14,7 @@ program day11
     use queue_int_mod
     use stdlib_selection, only: select
     implicit none
-    integer(ip) :: max_items = 1000000 ! This should not have to be so large -- problem in queue_int_mod
+    integer(ip) :: max_items = 200 ! This should not have to be so large -- problem in queue_int_mod
     integer(ip), parameter :: cl = 1024, max_rounds(2) = [20, 10000]
     integer(ip) :: fid, ierr, nm, buf(100), i, j, n, rounds, monkey_business, worry_level_mod
     character(len=cl) :: c0, c1, c2, c3, c4, c5
@@ -49,7 +49,7 @@ program day11
         do j = 1, size(monkeys)
             call inspect_and_throw(monkeys, j, divide_by_three=.TRUE., worry_level_mod=worry_level_mod)
         end do
-        print*, 'After step ', rounds
+        !print*, 'After step ', rounds
         if(total_items_count(monkeys) /= n) then
             print*, 'Total items count has changed', total_items_count(monkeys), n
             call print_monkeys(monkeys)
@@ -59,11 +59,11 @@ program day11
     end do
 
     inspections = monkeys(:)%inspections
-    print*, inspections
+    !print*, inspections
     n = size(inspections)
     call select(inspections, n - 1, j)
-    print*, inspections
-    monkey_business = product(inspections(n-1:))
+    !print*, inspections
+    monkey_business = product(inspections(n-1:)) ! 61503
     print*, 'Monkey business (part 1) = ', monkey_business
 
     print*, '!' 
@@ -75,27 +75,27 @@ program day11
     !call print_monkeys(monkeys)
 
     do rounds = 1, max_rounds(2)
-        print*, 'Round: ', rounds
+        !print*, 'Round: ', rounds
         do j = 1, size(monkeys2)
             call inspect_and_throw(monkeys2, j, divide_by_three=.FALSE., worry_level_mod=worry_level_mod)
         end do
-        print*, 'After step ', rounds
-        print*, monkeys2%inspections
-        if(rounds == 38) call print_monkeys(monkeys2)
-        if(rounds == 39) call print_monkeys(monkeys2)
+        !print*, 'After step ', rounds
+        !print*, monkeys2%inspections
+        !if(rounds == 38) call print_monkeys(monkeys2)
+        !if(rounds == 39) call print_monkeys(monkeys2)
         if(total_items_count(monkeys2) /= n) then
             print*, 'Total items count has changed'
             stop
         end if
     end do
-    call print_monkeys(monkeys2)
+    !call print_monkeys(monkeys2)
 
     inspections = monkeys2(:)%inspections
-    print*, inspections
+    !print*, inspections
     n = size(inspections)
     call select(inspections, n - 1, j)
-    print*, inspections
-    monkey_business = product(inspections(n-1:))
+    !print*, inspections
+    monkey_business = product(inspections(n-1:)) !  14081365540
     print*, 'Monkey business (part 2) = ', monkey_business
 
     contains 
