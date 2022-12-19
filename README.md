@@ -14,7 +14,7 @@ treatment
     fpm run day09
 ```
 
-On day 11 I used a queue datastructure, modified from flibs. Compiling this
+On day 11 I used a queue datastructure, modified from [flibs](https://flibs.sourceforge.net/). Compiling this
 required preprocessng as well.
 ```
     export FPM_FFLAGS="-O3 -fno-range-check -cpp"
