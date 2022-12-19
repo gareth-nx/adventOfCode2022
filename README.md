@@ -1,6 +1,6 @@
 # adventOfCode2022
 
-[Advent of Code 2022](https://adventofcode.com/2022), in Fortran, using fpm, stdlib.
+[Advent of Code 2022](https://adventofcode.com/2022), in Fortran, using fpm, stdlib, flibs.
 
 Run day01 with e.g.
 ```        
