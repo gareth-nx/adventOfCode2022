@@ -18,11 +18,9 @@ program day11
 
     ! Size of the queues in monkey(j)%items
     integer(ip) :: max_items = 200 
-    ! With the initial queues_flibs.inc, I had to make this very large to avoid problems. Made a 
-    ! small patch to queues_flibs.inc that re-initialises the start/end indices when queues become empty. 
-    ! While it works for this problem it's not a complete solution to the issue -- we could have a queue with just a few
-    ! elements at the end of its array -- in that case the data should be moved to the start -- but I 
-    ! haven't implemented that.
+    ! Note that the flibs queue has a tendency to run out of space once we have added max_items to it, even if
+    ! we simultaneously removed most of those items. To prevent that, below I call queue_destroy/queue_create if
+    ! the end index is > max_items/2
 
     integer(ip), parameter :: cl = 1024, max_rounds(2) = [20, 10000]
     integer(ip) :: fid, ierr, nm, buf(100), i, j, n, rounds, monkey_business, worry_level_mod
@@ -224,6 +222,13 @@ program day11
         if(.not. queue_empty(monkeys(nm)%items)) then
             print*, 'Monkey(', nm, ') is not empty'
             stop
+        end if
+
+        if(monkeys(nm)%items%end > max_items/2) then
+            ! Reset the queue to avoid running out of index space. With this queue,
+            ! indices are not moved back to the start, even when the queue empties.
+            call queue_destroy(monkeys(nm)%items)
+            call queue_create(monkeys(nm)%items, int(max_items, int32))
         end if
 
     end subroutine
