@@ -57,7 +57,7 @@ program day10
     ! Part 2
     do i = 1, maxval(cycles, dim=1)
         sprite = X(i-1) + [-1, 0, 1]
-        ! Here it wasn't obvious to me from the problem text that the sprite position is always
+        ! Here it wasn't obvious to me (from the problem text) that the sprite position is always
         ! on 'one row', and we colour the CRT if it's position matches that horizontally (whatever row it is on).
         if(any(sprite == mod((i-1), 40))) then 
             CRT_flat(i-1) = '#'
