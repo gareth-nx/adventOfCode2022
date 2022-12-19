@@ -2,7 +2,8 @@
 !! and is under the licence copied here.
 !!
 !! The code was modified so that type(QUEUE_DATA) was replaced with TYPE_QUEUE_DATA
-!! for more flexibility in the preprocessing. We also added a routine
+!! for more flexibility in the preprocessing. This allows the data to be e.g type(my_type),
+!! but also e.g. integer(int32).
 !
 !Copyright (c) 2008, Arjen Markus
 !
