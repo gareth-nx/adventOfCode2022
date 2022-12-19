@@ -1,5 +1,5 @@
 module queue_int_mod
-    ! Use the queue from flibs to make a queue of int32's
+    ! Use the queue from flibs to make a queue of ints
     ! There are some shortcomings in this at present, discussed below
     use iso_fortran_env, only: int32, int64
     implicit none
