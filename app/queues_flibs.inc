@@ -166,11 +166,14 @@ function queue_retrieve_data( queue ) result(data)
     if ( .not. queue_empty(queue) ) then
         queue%start = queue%start + 1
 
-        !! GD CHANGE HERE -- is this required?
-        !if( queue_empty( queue) ) then
-        !    queue%start = 1
-        !    queue%end   = 0
-        !end if
+        ! GD CHANGE HERE -- without this the queue start/end indices 
+        ! eventually exceed size(queue%data). Actually this is not a
+        ! general solution to resetting
+        if( queue_empty( queue) ) then
+            queue%start = 1
+            queue%end   = 0
+        end if
+        ! End GD change
 
         if ( queue%start .gt. size(queue%data) ) then
             queue%start = 1

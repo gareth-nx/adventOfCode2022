@@ -1,5 +1,6 @@
 module queue_int_mod
     ! Use the queue from flibs to make a queue of int32's
+    ! There are some shortcomings in this at present, discussed below
     use iso_fortran_env, only: int32, int64
     implicit none
     integer, parameter :: ip = int64 !int32
@@ -14,7 +15,15 @@ program day11
     use queue_int_mod
     use stdlib_selection, only: select
     implicit none
-    integer(ip) :: max_items = 200 ! This should not have to be so large -- problem in queue_int_mod
+
+    ! Size of the queues in monkey(j)%items
+    integer(ip) :: max_items = 200 
+    ! With the initial queues_flibs.inc, I had to make this very large to avoid problems. Made a 
+    ! small patch to queues_flibs.inc that re-initialises the start/end indices when queues become empty. 
+    ! While it works for this problem it's not a complete solution to the issue -- we could have a queue with just a few
+    ! elements at the end of its array -- in that case the data should be moved to the start -- but I 
+    ! haven't implemented that.
+
     integer(ip), parameter :: cl = 1024, max_rounds(2) = [20, 10000]
     integer(ip) :: fid, ierr, nm, buf(100), i, j, n, rounds, monkey_business, worry_level_mod
     character(len=cl) :: c0, c1, c2, c3, c4, c5
