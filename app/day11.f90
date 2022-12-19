@@ -234,6 +234,7 @@ program day11
     end subroutine
 
     subroutine print_monkeys(monkeys)
+        ! For debugging
         type(monkey_type), intent(in) :: monkeys(:)
         integer(ip) :: i, j, k
 
@@ -251,6 +252,7 @@ program day11
     end subroutine
 
     integer function total_items_count(monkeys)
+        ! For debugging
         type(monkey_type), intent(in) :: monkeys(:)
         integer(ip) :: j
            
