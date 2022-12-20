@@ -63,11 +63,12 @@ module shortest_path_on_array_mod
             call pq_extract_max(priority_queue, dist_site)
             !print*, 'Searching site: ', th_flat(dist_site%idx), dist_site%idx, 1.0_dp/dist_site%dis, priority_queue%heap_size
 
-            ! Possible the a site was added to the queue multiple times. But we only check once
-            if(searched_flat(dist_site%idx)) cycle 
-
             site_ind = dist_site%idx
             site_dist = 1.0_dp/dist_site%dis
+
+            ! Possible the a site was added to the queue multiple times. But we only check once
+            if(searched_flat(site_ind)) cycle 
+
             searched_flat(site_ind) = .true.
 
             !do j = 1, ny
