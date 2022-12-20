@@ -11,15 +11,23 @@ module shortest_path_on_array_mod
     real(dp) function travel_effort(c1, c2)
         ! Distance from c1 to c2. 
         character(len=1), intent(in) :: c1, c2
-
         ! Use a very large number to represent 'travel not possible'
         travel_effort = merge(1.0_dp, bigdist, ichar(c2) <= ichar(c1) + 1)
+    end function
 
+    real(dp) function travel_effort_reverse(c1, c2)
+        ! Distance from c1 to c2, when we are travelling in reverse
+        character(len=1), intent(in) :: c1, c2
+        ! Use a very large number to represent 'travel not possible'
+        travel_effort_reverse = merge(1.0_dp, bigdist, ichar(c2) >= ichar(c1) - 1)
     end function
    
-    subroutine shortest_path_on_character_array2d(th, source_pt, target_pt)
+    subroutine shortest_path_on_character_array2d(th, source_pt, target_pt, stop_at_letter, reverse)
         character(len=1), intent(in), target, contiguous :: th(:,:)
-        integer, intent(in) :: source_pt(2), target_pt(2)
+        integer, intent(in) :: source_pt(2)
+        integer, intent(in), optional :: target_pt(2)
+        character(len=1), intent(in), optional :: stop_at_letter
+        logical, optional, intent(in) :: reverse
 
         ! Handy to move between linear and 2d indices
         character(len=1), pointer :: th_flat(:)
@@ -32,6 +40,7 @@ module shortest_path_on_array_mod
 
         integer :: i, j, idx, nx, ny, ind, target_ind, source_ind, site_ind
         real(dp) :: dis, inv_dis1, inv_dis2, dis2, site_dist
+        logical :: rev
 
         integer, allocatable :: parent_ind_flat(:)
         logical, allocatable :: searched_flat(:)
@@ -41,7 +50,12 @@ module shortest_path_on_array_mod
         th_flat(1:size(th)) => th
 
         source_ind = source_pt(1) + nx*(source_pt(2) - 1)
-        target_ind = target_pt(1) + nx*(target_pt(2) - 1)
+
+        target_ind = -1
+        if(present(target_pt)) target_ind = target_pt(1) + nx*(target_pt(2) - 1)
+
+        rev = .false.
+        if(present(reverse)) rev = reverse
 
         allocate(elems(size(th)), parent_ind_flat(size(th)), searched_flat(size(th)))
         parent_ind_flat = -1
@@ -89,7 +103,11 @@ module shortest_path_on_array_mod
                     ! Avoid updating points we've already searched around -- as we could have got here more cheaply before
                     if(searched_flat(ind)) cycle
 
-                    dis2 = travel_effort(th_flat(site_ind), th_flat(ind))
+                    if(rev) then
+                        dis2 = travel_effort_reverse(th_flat(site_ind), th_flat(ind))
+                    else
+                        dis2 = travel_effort(th_flat(site_ind), th_flat(ind))
+                    end if
                     if(dis2 == bigdist) cycle
 
                     dis = site_dist + dis2
@@ -104,6 +122,9 @@ module shortest_path_on_array_mod
                        !print*, 'Hit target site, ', ind, dis, th_flat(ind)
                        exit main
                     end if
+                    if(present(stop_at_letter)) then
+                        if(th_flat(ind) == stop_at_letter) exit main
+                    end if
                 end do
             end do
         end do main
@@ -117,7 +138,7 @@ module shortest_path_on_array_mod
 
         path_inds = path_inds(size(path_inds):1:-1)
 
-        print*, 'PATH: ', path_inds
+        !print*, 'PATH: ', path_inds
         print*, '# Steps: ', size(path_inds)-2
 
     end subroutine
@@ -170,6 +191,10 @@ program day12
     th(start_ind(1), start_ind(2)) = 'a' ! Replace start by 'a'
     th(end_ind(1), end_ind(2)) = 'z' ! Replace end by 'z'
 
-    call shortest_path_on_character_array2d(th, start_ind, end_ind)
+    print*, 'Part 1'
+    call shortest_path_on_character_array2d(th, start_ind, target_pt = end_ind, reverse=.FALSE.)
+
+    print*, 'Part 2'
+    call shortest_path_on_character_array2d(th, end_ind, stop_at_letter='a', reverse=.TRUE.)
 
 end program
