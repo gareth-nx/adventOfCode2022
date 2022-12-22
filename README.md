@@ -25,3 +25,4 @@ Beware with current setup, fpm does not recompile appropriately if the
 included code [app/queues_flibs.inc](app/queues_flibs.inc) changes. I'm not sure
 how to get that to work - but a work-around is to delete the build directory.
 
+Day 12 was implemented using priority queues (or heaps), with 2 different implementations - [the first attempt](app/day12.f90) using the [kdtree2 library](https://github.com/jmhodges/kdtree2), and [the second attempt](app/day12_alternate.f90) using [mheap_template](https://github.com/gareth-nx/mheap_template). 
