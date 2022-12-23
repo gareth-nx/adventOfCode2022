@@ -1,24 +1,22 @@
 module qsort_C_mod
     implicit none
     interface
-
-        subroutine qsort_C(array, elem_count, elem_size, compare) bind(C,name="qsort")
-          !! Call qsort from C.
-          use iso_c_binding, only: c_ptr, c_size_t, c_funptr
-          implicit none
-          type(c_ptr), value       :: array
-              !! When called this should be c_loc(array(1))
-          integer(c_size_t), value :: elem_count
-              !! When called this is int(size(array), c_size_t)
-          integer(c_size_t), value :: elem_size
-              !! When called this is int(storage_size(array(1))/8, c_size_t)
-          type(c_funptr), value    :: compare
-              !! When called this should be c_funloc(comparison_function) where
-              !! comparison_function(array(i), array(j)) will return
-              !! -1_c_int, 0_c_int, or 1_c_int, if array(i) is less than, equal,
-              !! or greater than array(j) respectively.
-        end subroutine qsort_C !standard C library qsort
-
+    subroutine qsort_C(array, elem_count, elem_size, compare) bind(C,name="qsort")
+      !! Call qsort from C.
+      use iso_c_binding, only: c_ptr, c_size_t, c_funptr
+      implicit none
+      type(c_ptr), value       :: array
+          !! When called this should be c_loc(array(1))
+      integer(c_size_t), value :: elem_count
+          !! When called this is int(size(array), c_size_t)
+      integer(c_size_t), value :: elem_size
+          !! When called this is int(storage_size(array(1))/8, c_size_t)
+      type(c_funptr), value    :: compare
+          !! When called this should be c_funloc(comparison_function) where
+          !! comparison_function(array(i), array(j)) will return
+          !! -1_c_int, 0_c_int, or 1_c_int, if array(i) is less than, equal,
+          !! or greater than array(j) respectively.
+    end subroutine qsort_C !standard C library qsort
     end interface
 end module
 
@@ -57,56 +55,41 @@ module entries
             if(c1(j:j) == '[') level = level + 1
             levels(j) = level
             if(c1(j:j) == ']') level = level - 1
-
             if(level == 2 .and. c1(j:j) == '[') entry_count = entry_count + 1
             if(level == 1 .and. is_integer(c1(j:j))) then
-                ! Some numbers take up 2 digits -- need to check for that.
+                ! Some numbers take up 2 digits -- check for that.
                 if(j == 1) then
                     entry_count = entry_count + 1
                 else if(.not. is_integer(c1(j-1:j-1))) then
                     entry_count = entry_count + 1
                 end if
             end if
-
             !if(verbose) print*, ' ', levels(j), c1(j:j), entry_count; flush(6)
         end do linescan
         if(verbose) print*, 'ENTRY COUNT: ', entry_count; flush(6)
 
         call delete_entry(p1)
         p1%c1 = c1
-        !if(allocated(p1%i)) deallocate(p1%i)
-        !if(allocated(p1%l)) deallocate(p1%l)
         allocate(p1%i(entry_count), p1%l(entry_count))
 
         if(entry_count > 0) then
-        
-            p1%i = non_integer_entry
-            !stop
-
-            ! Read the entries
+            p1%i = non_integer_entry ! Default, will be updated later for integer entries
             i = 1
             reader: do j = 2, len_trim(c1)-1
-
                 if(levels(j) == 1 .and. is_integer(c1(j:j))) then
                     ! Deal with the fact that 10 has 2 digits
-
-                    ! If the last j was an integer, we are on the 2nd digit of a 2digit number 
-                    ! Skip it
                     if(j-1 >= 1) then
+                        ! If the last j was an integer, we are on the 2nd digit of a 2 digit number 
                         if(is_integer( c1((j-1):(j-1)) )) cycle reader
                     end if
+
+                    read(c1(j:j), *, iostat=ierr) myint
                     if(len_trim(c1) > j) then
                         ! Read the next integer
                         if(is_integer( c1(j+1:j+1) )) then
                             ! The ten has 2 digits
                             read( c1(j:j+1), *, iostat=ierr) myint
-                        else
-                            ! Other numbers have 1 digit
-                            read(c1(j:j), *, iostat=ierr) myint
                         end if
-                    else
-                        ! Other numbers have 1 digit
-                        read(c1(j:j), *, iostat=ierr) myint
                     end if
 
                     if(ierr /= 0) stop 'READ ERROR'
@@ -116,7 +99,6 @@ module entries
                 else if(levels(j) == 1 .and. c1(j:j) == ',') then
                     ! Next entry
                     i = i + 1
-
                 else if(levels(j) == 2 .and. c1(j:j) == '[') then
                     ! Next entry is a list that we need to parse
                     find_end: do n = j+1, len_trim(c1)
@@ -146,7 +128,7 @@ module entries
         if(verbose) print*, 'DELETING p'; flush(6)
         if(allocated(p%i)) deallocate(p%i)
         if(allocated(p%l)) then
-            if(size(p%l) > 0) then
+            if(size(p%l) > 0) then ! Recursively delete entries
                 do i = 1, size(p%l)
                     call delete_entry(p%l(i))
                 end do
@@ -168,7 +150,6 @@ module entries
         ! Return 0  if p1 == p2 (should not happen in final comparisons)
         type(entry), intent(in) :: p1, p2
         integer, intent(out) :: res
-
         integer :: j, myorder
         type(entry), allocatable :: pl, pr
 
@@ -181,17 +162,11 @@ module entries
 
         res = 0
         myorder = 0
-
-        ! Entries with one item, used if we need to recurse
         allocate(pl, pr)
 
         if(size(p1%i) == 0) then
             ! Special case
-            if(size(p2%i) > 0) then
-                res = -1 ! p1 < p2
-            else
-                res = 0 ! both of size 0
-            end if
+            res = merge(-1, 0, size(p2%i) > 0)
         else if(size(p2%i) == 0) then
             ! Special case
             res = 1 ! p1 > p2
@@ -203,31 +178,24 @@ module entries
                     res = 1 ! p1 > p2
                     exit mainloop 
                 end if
-
                 if(p1%i(j) /= non_integer_entry .and. p2%i(j) /= non_integer_entry) then
-
-                    ! Both integers
-                    ! If results are unequal we can determine the result
+                    ! Both integers - if results are unequal we can determine the result
                     if(verbose) print*, 'comparing ints: ', p1%i(j), p2%i(j); flush(6)
                     if(p1%i(j) /= p2%i(j)) then
                         res = merge(-1, 1, p1%i(j) < p2%i(j))
                         exit mainloop 
                     end if
-
                 else if(p1%i(j) == non_integer_entry .and. p2%i(j) == non_integer_entry) then
-                    if(verbose) print*, 'comparing non-ints: ', p1%i(j), p2%i(j); flush(6)
                     ! Both lists
+                    if(verbose) print*, 'comparing non-ints: ', p1%i(j), p2%i(j); flush(6)
                     call order_check( p1%l(j), p2%l(j), myorder)
                     if(myorder /= 0) then
                         res = myorder
                         exit mainloop 
                     end if
-
                 else if((p1%i(j) == non_integer_entry .and. p2%i(j) /= non_integer_entry) .or. &
                         (p1%i(j) /= non_integer_entry .and. p2%i(j) == non_integer_entry) ) then
                     if(verbose) print*, 'comparing mixed int / non-int: ', p1%i(j), p2%i(j); flush(6)
-                    !print*, trim(p1%c1)
-                    !print*, trim(p2%c1)
                     call delete_entry(pl)
                     call delete_entry(pr)
                     if(p1%i(j) == non_integer_entry) then
@@ -235,29 +203,22 @@ module entries
                         pl%l = p1%l(j)%l
                         pr%i = [p2%i(j)]
                         if(size(pl%l) == 0) then
-                            ! p1 < p2
                             res = -1
                             exit mainloop 
                         end if
                     else if(p2%i(j) == non_integer_entry) then
                         pl%i = [p1%i(j)]
-                        !pl%l(1) = p1%l(j)
-                        !pr%i(1) = p2%i(j)
-                        !pr%l(1) = p2%l(j)
                         pr%i = p2%l(j)%i
                         pr%l = p2%l(j)%l
                         if(size(pr%l) == 0) then
-                            ! p1 > p2
                             res = 1
                             exit mainloop
                         end if
                     end if
-
                     if(verbose) then
                         print*, 'pl: ', pl%i
                         print*, 'pr: ', pr%i
                     end if
-
                     call order_check(pl, pr, myorder)
                     if(myorder /= 0) then
                         res = myorder
@@ -268,19 +229,13 @@ module entries
         end if
 
         if(res == 0) then
-            if((size(p1%i) < size(p2%i))) then
-                ! If we got here without finishing, then p1 < p2
-                res = -1
-            else
-                ! Cannot resolve the comparison
-                res = 0
-            end if
+            ! If p1%i is shorter, then p1 < p2
+            if((size(p1%i) < size(p2%i))) res = -1 
         end if
 
         if(verbose) print*, 'res: ', res; flush(6)
 
-        call delete_entry(pl)
-        call delete_entry(pr)
+        call delete_entry(pl); call delete_entry(pr)
 
     end subroutine
 
@@ -288,7 +243,7 @@ end module entries
 
 program day13
     use entries
-    use iso_c_binding
+    use iso_c_binding, only: c_ptr, c_int, c_f_pointer, c_loc, c_size_t, c_sizeof, c_funloc
     use qsort_C_mod
     implicit none
     character(len=cl) :: c1, c2
@@ -358,16 +313,12 @@ program day13
     contains
 
     function order_check_for_c(i1ptr, i2ptr) result(sgn) bind(C)
-        use iso_c_binding, only: c_ptr, c_int, c_f_pointer
         type(c_ptr), value, intent(in) :: i1ptr, i2ptr
         integer, pointer :: i1, i2
         integer(c_int) :: sgn
-
         call c_f_pointer(i1ptr, i1)
         call c_f_pointer(i2ptr, i2)
-
         call order_check(all_p(i1), all_p(i2), sgn)
-
     end function
 
 end program
