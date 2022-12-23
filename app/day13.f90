@@ -1,3 +1,27 @@
+module qsort_C_mod
+    implicit none
+    interface
+
+        subroutine qsort_C(array, elem_count, elem_size, compare) bind(C,name="qsort")
+          !! Call qsort from C.
+          use iso_c_binding, only: c_ptr, c_size_t, c_funptr
+          implicit none
+          type(c_ptr), value       :: array
+              !! When called this should be c_loc(array(1))
+          integer(c_size_t), value :: elem_count
+              !! When called this is int(size(array), c_size_t)
+          integer(c_size_t), value :: elem_size
+              !! When called this is int(storage_size(array(1))/8, c_size_t)
+          type(c_funptr), value    :: compare
+              !! When called this should be c_funloc(comparison_function) where
+              !! comparison_function(array(i), array(j)) will return
+              !! -1_c_int, 0_c_int, or 1_c_int, if array(i) is less than, equal,
+              !! or greater than array(j) respectively.
+        end subroutine qsort_C !standard C library qsort
+
+    end interface
+end module
+
 module entries
     implicit none
 
@@ -49,7 +73,7 @@ module entries
         if(verbose) print*, 'ENTRY COUNT: ', entry_count; flush(6)
 
         call delete_entry(p1)
-        !p1%c1 = c1
+        p1%c1 = c1
         !if(allocated(p1%i)) deallocate(p1%i)
         !if(allocated(p1%l)) deallocate(p1%l)
         allocate(p1%i(entry_count), p1%l(entry_count))
@@ -264,10 +288,17 @@ end module entries
 
 program day13
     use entries
+    use iso_c_binding
+    use qsort_C_mod
     implicit none
     character(len=cl) :: c1, c2
     integer :: fid, ierr, counter=0, order, index_sum = 0
     type(entry) :: p1, p2
+    type(entry), allocatable :: all_p(:)
+    integer, allocatable :: counter_array(:)
+    integer :: i, decoder_key, j
+
+    allocate(all_p(0), counter_array(0))
 
     !open(newunit=fid, file='data/test_input_day13.txt', form='formatted', action='read')
     open(newunit=fid, file='data/input_day13.txt', form='formatted', action='read')
@@ -276,10 +307,15 @@ program day13
         read(fid, '(a)', iostat=ierr) c1
         read(fid, '(a)', iostat=ierr) c2
         counter = counter+1
+
         if(verbose) print*, 'INIT: ', trim(c1); flush(6)
         call parse_list(c1, p1)
         if(verbose) print*, 'INIT: ', trim(c2); flush(6)
         call parse_list(c2, p2)
+
+        all_p = [ all_p, p1, p2 ]
+        counter_array = [counter_array, 2*counter - 1, 2*counter]
+
         if(verbose) then
             print*, ' '
             print*, 'COMPARING'
@@ -297,5 +333,41 @@ program day13
         if(ierr /= 0) exit reader
     end do reader
 
-    print*, 'SUM OF INDICES IN RIGHT ORDER (part 1): ', index_sum
+    print*, 'SUM OF INDICES IN RIGHT ORDER (part 1): ', index_sum !5605
+
+    ! Part 2
+    c1 = '[[2]]'
+    call parse_list(c1, p1)
+    c2 = '[[6]]'
+    call parse_list(c2, p2)
+    all_p = [all_p, p1, p2]
+    counter_array = [counter_array, maxval(counter_array) + 1, maxval(counter_array) + 2]
+
+    call qsort_C(c_loc(counter_array(1)), size(counter_array, kind=c_size_t), &
+            c_sizeof(counter_array(1)), &
+            c_funloc(order_check_for_c) )
+
+    decoder_key = 1
+    do i = 1, size(all_p)
+        j = counter_array(i)
+        !print*, i, trim(all_p(j)%c1)
+        if(all_p(j)%c1 == c1 .or. all_p(j)%c1 == c2) decoder_key = decoder_key * i
+    end do
+    print*, 'Decoder key: ', decoder_key ! 24969
+
+    contains
+
+    function order_check_for_c(i1ptr, i2ptr) result(sgn) bind(C)
+        use iso_c_binding, only: c_ptr, c_int, c_f_pointer
+        type(c_ptr), value, intent(in) :: i1ptr, i2ptr
+        integer, pointer :: i1, i2
+        integer(c_int) :: sgn
+
+        call c_f_pointer(i1ptr, i1)
+        call c_f_pointer(i2ptr, i2)
+
+        call order_check(all_p(i1), all_p(i2), sgn)
+
+    end function
+
 end program
