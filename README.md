@@ -29,5 +29,5 @@ Day 12 was implemented using priority queues (or heaps), with 2 different implem
 
 Day 13 (part 1) segfaults with gfortran but works with ifort if we compile manually:
 ```
-ifort -fpp -check bounds -g -pg -o app/day13 app/day13.f90 
+ifort -fpp -check bounds -g -pg -o problem_sources/day13 problem_sources/day13.f90 
 ```
